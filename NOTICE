@@ -1,0 +1,24 @@
+claude-grok-offload
+Copyright (c) 2026 msju199
+
+This product is licensed under the MIT License. See LICENSE.
+
+Third-party and peer references
+--------------------------------
+
+This repository is an independent community product. It is not affiliated with,
+endorsed by, or sponsored by xAI.
+
+Peer / related software (Apache License 2.0):
+  xAI Grok Build plugin for Claude Code (marketplace package commonly named
+  "grok-build-plugin-cc" / Grok Build documentation surfaces).
+  That project is a useful peer for Grok CLI integration patterns. This product
+  reimplements portable offload contracts and sandbox install helpers under MIT
+  and does not copy Apache-licensed source from xAI into this tree.
+
+Runtime dependencies (not bundled):
+  - Grok CLI / SuperGrok (xAI) — separate commercial terms
+  - Claude Code (Anthropic) — separate commercial terms
+  - Optional: rsync, git, bash, shellcheck (CI)
+
+See THIRD_PARTY.md for a concise attribution table.
