@@ -1,0 +1,7 @@
+# Example sweep targets file
+# Copy to: ~/.config/claude-grok-offload/sweep-targets.txt
+# One absolute path to a git repository per line.
+# Lines starting with # are ignored.
+
+# /absolute/path/to/your-app
+# /absolute/path/to/another-repo

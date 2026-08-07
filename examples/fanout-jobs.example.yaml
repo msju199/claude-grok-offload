@@ -1,0 +1,29 @@
+# Example fanout job shapes (operator-filled; not auto-executed by the product)
+# Mode R = read-only recon · Mode W = write in prepared worktrees
+
+version: 1
+notes: >
+  Use scripts/fanout_run.sh. Product does not hardcode host queues.
+  Sandbox R = $CGO_SANDBOX · W = $CGO_SANDBOX_WRITE.
+
+jobs:
+  - id: recon-trees
+    mode: R
+    # Each child should use cwd = target; wrapper sets --cwd to the anchor
+    targets:
+      - /absolute/path/to/tree-a
+      - /absolute/path/to/tree-b
+    prompt: |
+      Spawn read-only recon for each listed tree (per-child cwd).
+      Report: role of top-level modules, 0-3 smells, caller hints.
+      No patches.
+
+  - id: write-batch
+    mode: W
+    # Prepare with worktree-prepare.sh per item before fanout_run W
+    worktrees:
+      - /absolute/path/to/repo/.cgo-worktrees/<id-1>
+      - /absolute/path/to/repo/.cgo-worktrees/<id-2>
+    prompt: |
+      Implement only the 5-kan spec for this item.
+      Objective / Files / Interfaces / Constraints / Verification required.
