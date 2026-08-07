@@ -98,6 +98,11 @@ See [NOTICE](./NOTICE) and [THIRD_PARTY.md](./THIRD_PARTY.md).
 
 Evidence for dogfood: Ready:yes + fixture grill output.
 
+- **External testers:** [docs/EXTERNAL-DOGFOOD.md](./docs/EXTERNAL-DOGFOOD.md)  
+- **Marketplace submit pack:** [docs/MARKETPLACE-SUBMIT.md](./docs/MARKETPLACE-SUBMIT.md)  
+- **Community catalog PR:** https://github.com/jimmc414/claude-code-plugin-marketplace/pull/8  
+- **Anthropic directory form:** https://clau.de/plugin-directory-submission  
+
 ---
 
 ## Commands (slash)
