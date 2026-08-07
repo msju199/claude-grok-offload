@@ -60,10 +60,14 @@ if "__HOME__" not in frag_ro:
 ro = frag_ro.replace("__HOME__", abs_home)
 impl = frag_impl.replace("__HOME__", abs_home)
 
-# Reject accidental personal-path leak from fragments (defense in depth).
-for label, body in (("cgo_ro", ro), ("cgo_impl", impl)):
-    if "jangdonghwa" in body.lower():
-        print(f"{label}: forbidden personal path string", file=sys.stderr)
+# Reject accidental personal-path leak from fragments *before* HOME expand
+# (after expand, abs_home legitimately contains the operator user path).
+_users = "/" + "Users" + "/"
+_home = "/" + "home" + "/"
+_vault = "Obsidian" + " " + "Vault"
+for label, body in (("cgo_ro", frag_ro), ("cgo_impl", frag_impl)):
+    if _users in body or _home in body or _vault in body:
+        print(f"{label}: forbidden hard-coded host path in fragment", file=sys.stderr)
         sys.exit(1)
 
 existing = dest.read_text(encoding="utf-8") if dest.is_file() else ""

@@ -315,27 +315,109 @@ if [[ ${#RESOLVED_INPUTS[@]} -gt 0 ]]; then
   PRIMARY="${RESOLVED_INPUTS[0]}"
 fi
 
-# --- default prompt templates (generic; Task 4 will wire stripped contracts) ---
+# --- load stripped contracts from prompts/*.md (Task 4) ---
+# Extract first fenced ``` block after a "Prompt body" heading; substitute placeholders.
+extract_prompt_body() {
+  local file="$1"
+  [[ -f "$file" ]] || return 1
+  # awk: after seeing Prompt body heading, capture first ``` … ``` fence
+  awk '
+    BEGIN { in_body=0; in_fence=0 }
+    /^##[ ]+[Pp]rompt[ ]+body/ { in_body=1; next }
+    in_body && /^```/ {
+      if (in_fence==0) { in_fence=1; next }
+      else { exit }
+    }
+    in_fence { print }
+  ' "$file"
+}
+
+substitute_placeholders() {
+  # stdin → stdout with common placeholders replaced
+  local design="${PRIMARY:-}"
+  local ssot=""
+  local ctx=""
+  local i
+  if [[ ${#RESOLVED_INPUTS[@]} -gt 0 ]]; then
+    # PRIMARY is [0]; remaining inputs are SSOT/context
+    local rest=()
+    for ((i=1; i<${#RESOLVED_INPUTS[@]}; i++)); do
+      rest+=("${RESOLVED_INPUTS[$i]}")
+    done
+    if [[ ${#rest[@]} -gt 0 ]]; then
+      ssot=$(IFS=', '; echo "${rest[*]}")
+      ctx="$ssot"
+    fi
+  fi
+  local mode_kind="${VERIFY_KIND:-plan}"
+  local axes="${CGO_JUDGE_AXES:-cost, reversibility, ops burden, security}"
+  local principles="${CGO_PRINCIPLES_PATHS:-}"
+  # sed-safe: use python if available for robust replace; else bash parameter expansion via env
+  if command -v python3 >/dev/null 2>&1; then
+    DESIGN_PATH="$design" SSOT_PATHS="$ssot" TARGET_PATH="$design" \
+    MODE_KIND="$mode_kind" CONTEXT_PATHS="$ctx" AXES="$axes" \
+    PRINCIPLES_PATHS="$principles" \
+    python3 -c '
+import os, sys
+t = sys.stdin.read()
+repl = {
+  "{{DESIGN_PATH}}": os.environ.get("DESIGN_PATH",""),
+  "{{SSOT_PATHS}}": os.environ.get("SSOT_PATHS","") or "(none listed)",
+  "{{TARGET_PATH}}": os.environ.get("TARGET_PATH","") or "(missing)",
+  "{{MODE}}": os.environ.get("MODE_KIND","plan"),
+  "{{CONTEXT_PATHS}}": os.environ.get("CONTEXT_PATHS","") or "(none listed)",
+  "{{AXES}}": os.environ.get("AXES","cost, reversibility, ops burden, security"),
+  "{{PRINCIPLES_PATHS}}": os.environ.get("PRINCIPLES_PATHS","") or "(none)",
+}
+for k,v in repl.items():
+  t = t.replace(k, v)
+sys.stdout.write(t)
+'
+  else
+    # minimal fallback
+    local body
+    body="$(cat)"
+    body="${body//\{\{DESIGN_PATH\}\}/$design}"
+    body="${body//\{\{TARGET_PATH\}\}/$design}"
+    body="${body//\{\{SSOT_PATHS\}\}/${ssot:-(none listed)}}"
+    body="${body//\{\{CONTEXT_PATHS\}\}/${ctx:-(none listed)}}"
+    body="${body//\{\{MODE\}\}/$mode_kind}"
+    body="${body//\{\{AXES\}\}/$axes}"
+    body="${body//\{\{PRINCIPLES_PATHS\}\}/${principles:-(none)}}"
+    printf '%s' "$body"
+  fi
+}
+
 if [[ -z "$PROMPT_TEXT" ]]; then
-  case "$MODE" in
-    grill)
-      PROMPT_TEXT="You did not write this design. Assume defects and adversarially review it. Read-only: report findings and stop.
+  PROMPT_FILE="${PLUGIN_ROOT}/prompts/${MODE}.md"
+  body=""
+  if [[ -f "$PROMPT_FILE" ]]; then
+    body="$(extract_prompt_body "$PROMPT_FILE" || true)"
+  fi
+  if [[ -n "${body//[$'\t\r\n ']/}" ]]; then
+    PROMPT_TEXT="$(printf '%s\n' "$body" | substitute_placeholders)"
+  else
+    # Fallback short templates if prompt file missing (later modes until ported)
+    case "$MODE" in
+      grill)
+        PROMPT_TEXT="You did not write this design. Assume defects and adversarially review it. Read-only: report findings and stop.
 Target design: ${PRIMARY:-<missing>}
 Procedure: read the design; list [fatal]/important]/note] findings with evidence quotes; end with verdict PASS or REVISE."
-      ;;
-    verify)
-      PROMPT_TEXT="Verify the subject (${VERIFY_KIND:-plan/code/fact}). Target: ${PRIMARY:-<stdin/extra>}. Read-only. Report PASS or REVISE with evidence."
-      ;;
-    judge)
-      PROMPT_TEXT="Judge the options in: ${PRIMARY:-<missing>}. Read-only. Compare trade-offs; recommend one with one-line rationale."
-      ;;
-    impl)
-      PROMPT_TEXT="Implement per the five-slot spec in: ${PRIMARY:-<missing>}. Write only under CWD. No silent fallback."
-      ;;
-    fanout|sweep|heavy-burn)
-      PROMPT_TEXT="Mode ${MODE}. Inputs: ${PRIMARY:-none}. Follow product contract for this mode."
-      ;;
-  esac
+        ;;
+      verify)
+        PROMPT_TEXT="Verify the subject (${VERIFY_KIND:-plan/code/fact}). Target: ${PRIMARY:-<stdin/extra>}. Read-only. Report PASS or REVISE with evidence."
+        ;;
+      judge)
+        PROMPT_TEXT="Judge the options in: ${PRIMARY:-<missing>}. Read-only. Compare trade-offs; recommend one with one-line rationale."
+        ;;
+      impl)
+        PROMPT_TEXT="Implement per the five-slot spec in: ${PRIMARY:-<missing>}. Write only under CWD. No silent fallback."
+        ;;
+      fanout|sweep|heavy-burn)
+        PROMPT_TEXT="Mode ${MODE}. Inputs: ${PRIMARY:-none}. Follow product contract for this mode."
+        ;;
+    esac
+  fi
 fi
 
 # --- tools / web ---

@@ -22,9 +22,10 @@ grep -q '\[profiles.cgo_ro\]' "$GROK_SANDBOX_TOML"
 grep -q '\[profiles.cgo_impl\]' "$GROK_SANDBOX_TOML"
 # Pre-existing profile preserved
 grep -q '\[profiles.keepme\]' "$GROK_SANDBOX_TOML"
-# No personal path string from product machine
-if grep -q 'jangdonghwa' "$GROK_SANDBOX_TOML"; then
-  echo "FAIL: jangdonghwa found in sandbox.toml" >&2
+# No vault-style path leak from fragments (test HOME expansion is expected)
+_vault_marker="$(printf '%s %s' 'Obsidian' 'Vault')"
+if grep -qF "$_vault_marker" "$GROK_SANDBOX_TOML"; then
+  echo "FAIL: vault path leaked into sandbox.toml" >&2
   exit 1
 fi
 # Absolute HOME expanded (not tilde / not __HOME__)
