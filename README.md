@@ -8,29 +8,55 @@ MIT License · Independent community product · **Not affiliated with xAI**
 
 ## Install (supported path)
 
-Marketplace / local plugin path only. **skills.sh is not a supported install** for this product.
+**skills.sh is not supported.** Use Claude Code plugin install only.
 
-```bash
-# 1) Add marketplace or clone this repo, then install the plugin in Claude Code
-#    (exact marketplace UI labels vary by Claude Code version)
+### Prerequisites
+
+- [Claude Code](https://code.claude.com)  
+- [Grok Build CLI](https://docs.x.ai/build/overview) on `PATH` (or set `GROK_BINARY`)  
+- `grok login` already works (`grok models` succeeds)  
+- `bash`, `git` · optional `rsync`
+
+### A. Claude Code (slash)
+
+```text
 /plugin marketplace add msju199/claude-grok-offload
-/plugin install claude-grok-offload
-
-# 2) Install portable sandbox fragments into ~/.grok/sandbox.toml
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/install-sandbox-profiles.sh"
-# or after install: /claude-grok-offload:install-sandbox
-
-# 3) Ready-state check (writes cgo-env under plugin data)
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/cgo-check.sh"
-# expect: Ready: yes
-
-# 4) First-run grill (no args → package fixture)
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/invoke-grok.sh" --mode grill
-# or: /claude-grok-offload:grill
+/plugin install claude-grok-offload@claude-grok-offload-mp
+/reload-plugins
+/claude-grok-offload:install-sandbox
+/claude-grok-offload:check
+/claude-grok-offload:grill
 ```
 
-Requires: **Grok CLI** on `PATH` (or `GROK_BINARY`), authenticated SuperGrok/xAI account, **Claude Code** plugin host, `git`, `bash`. Optional: `rsync`.
+Expect from **check**: a line `Ready: yes`.  
+**grill** with no args uses the package fixture (first success path).
 
+If `@claude-grok-offload-mp` is not accepted by your Claude Code build, use:
+
+```text
+/plugin install claude-grok-offload
+```
+
+### B. Terminal (same steps, scripts)
+
+After the plugin is installed, `CLAUDE_PLUGIN_ROOT` points at the plugin cache directory (Claude sets this in-session). From a normal shell, clone and run scripts by absolute path:
+
+```bash
+git clone https://github.com/msju199/claude-grok-offload.git
+cd claude-grok-offload
+PLUGIN="$(pwd)/plugins/claude-grok-offload"
+
+bash "$PLUGIN/scripts/install-sandbox-profiles.sh"
+bash "$PLUGIN/scripts/cgo-check.sh"          # → Ready: yes
+bash "$PLUGIN/scripts/invoke-grok.sh" --mode grill
+```
+
+### What “done” looks like (S1 smoke)
+
+1. Plugin installed  
+2. `install-sandbox` OK (writes `cgo_ro` / `cgo_impl` into `~/.grok/sandbox.toml`)  
+3. `check` → **`Ready: yes`**  
+4. `grill` (no path) → grill text (PASS or REVISE both count as “ran”)
 ---
 
 ## Peer comparison
