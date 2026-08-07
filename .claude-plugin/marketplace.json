@@ -1,0 +1,12 @@
+{
+  "name": "claude-grok-offload-mp",
+  "owner": { "name": "msju199" },
+  "metadata": { "description": "Claude↔Grok offload economy pack" },
+  "plugins": [
+    {
+      "name": "claude-grok-offload",
+      "source": "./plugins/claude-grok-offload",
+      "description": "Grok offload: grill, verify, impl, judge, fanout, sweep, heavy-burn"
+    }
+  ]
+}

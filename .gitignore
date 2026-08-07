@@ -1,0 +1,6 @@
+.DS_Store
+*.bak.*
+# local plugin state / env (never commit)
+cgo-env
+*.local
+.claude/settings.local.json
