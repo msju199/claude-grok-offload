@@ -13,7 +13,7 @@ Marketplace / local plugin path only. **skills.sh is not a supported install** f
 ```bash
 # 1) Add marketplace or clone this repo, then install the plugin in Claude Code
 #    (exact marketplace UI labels vary by Claude Code version)
-/plugin marketplace add <owner>/claude-grok-offload
+/plugin marketplace add msju199/claude-grok-offload
 /plugin install claude-grok-offload
 
 # 2) Install portable sandbox fragments into ~/.grok/sandbox.toml
