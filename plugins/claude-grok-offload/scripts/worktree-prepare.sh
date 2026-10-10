@@ -65,6 +65,11 @@ fi
 is_temp_path() {
   local p="$1"
   case "$p" in
+    "$REPO/.cgo-worktrees"|"$REPO/.cgo-worktrees"/*)
+      return 1
+      ;;
+  esac
+  case "$p" in
     /tmp|/tmp/*|/private/tmp|/private/tmp/*)
       return 0
       ;;
