@@ -4,6 +4,17 @@
 
 MIT License · Independent community product · **Not affiliated with xAI**
 
+![Grok grill listing design gaps, then a red stamp reading Overall verdict: REVISE](./docs/media/grill-revise.gif)
+
+*Illustrative recreation of the grill → REVISE moment. Not a recording of a live session.*
+
+## Demo
+
+Illustrative recreation of the terminal flow (self-PASS, grill, REVISE, fixed-design PASS, Ready: yes, modes, install). GitHub does not play these inline.
+
+- [Landscape promo (16:9)](./docs/media/claude-grok-offload-promo-16x9.mp4)
+- [Vertical promo (9:16)](./docs/media/claude-grok-offload-promo.mp4)
+
 ---
 
 ## Install (supported path)
