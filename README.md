@@ -10,7 +10,7 @@ MIT License · Independent community product · **Not affiliated with xAI**
 
 ## Demo
 
-Illustrative recreation of the terminal flow (self-PASS, grill, REVISE, fixed-design PASS, Ready: yes, modes, install). GitHub does not play these inline.
+Illustrative recreation of the terminal flow (self-PASS, grill, REVISE, fixed-design PASS, Ready: yes, modes, install). Both videos have sound. GitHub does not play these inline.
 
 - [Landscape promo (16:9)](./docs/media/claude-grok-offload-promo-16x9.mp4)
 - [Vertical promo (9:16)](./docs/media/claude-grok-offload-promo.mp4)
