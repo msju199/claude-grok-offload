@@ -4,10 +4,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$PLUGIN_ROOT/../.." && pwd)"
 WT_PREP="$PLUGIN_ROOT/scripts/worktree-prepare.sh"
-
-TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT
 
 pass=0
 fail=0
@@ -32,12 +30,60 @@ assert_exit() {
   fi
 }
 
-is_tmpish() {
+# worktree-prepare rejects every path under /tmp or /private/tmp, including
+# the default <repo>/.cgo-worktrees. A mktemp fixture (Linux CI /tmp, or
+# macOS when TMPDIR is /tmp) makes that default root look temporary and
+# case 1 exits 1. Build the fixture outside those roots and always remove it.
+under_temp_root() {
   case "$1" in
-    /tmp/*|/private/tmp/*|/var/folders/*|/private/var/folders/*) return 0 ;;
-    *) return 1 ;;
+    /tmp|/tmp/*|/private/tmp|/private/tmp/*)
+      return 0
+      ;;
+    /var/folders|/var/folders/*|/private/var/folders|/private/var/folders/*)
+      return 0
+      ;;
   esac
+  return 1
 }
+
+physical_dir() {
+  (cd "$1" && pwd -P)
+}
+
+pick_fixture_parent() {
+  local candidate physical nongit="" gitparent=""
+  # Prefer $HOME so the fixture is not nested in this checkout. A directory
+  # under the checkout is the fallback when HOME is missing or temporary.
+  for candidate in "${HOME:-}" "$REPO_ROOT" "$PLUGIN_ROOT"; do
+    [[ -n "$candidate" && -d "$candidate" && -w "$candidate" ]] || continue
+    physical="$(physical_dir "$candidate")" || continue
+    under_temp_root "$physical" && continue
+    # A parent git repo would make "$TMP/notgit" look like a work tree.
+    if git -C "$physical" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      [[ -z "$gitparent" ]] && gitparent="$physical"
+      continue
+    fi
+    nongit="$physical"
+    break
+  done
+  if [[ -n "$nongit" ]]; then
+    printf '%s\n' "$nongit"
+    return 0
+  fi
+  if [[ -n "$gitparent" ]]; then
+    printf '%s\n' "$gitparent"
+    return 0
+  fi
+  echo "test-worktree: no non-temp parent for the fixture repo" >&2
+  return 1
+}
+
+FIXTURE_PARENT="$(pick_fixture_parent)"
+TMP="$(mktemp -d "${FIXTURE_PARENT}/.cgo-wt-test.XXXXXX")"
+trap 'rm -rf "$TMP"' EXIT
+# Keep git discovery inside the fixture even if the parent is a repository
+# (checkout fallback, or a dotfiles HOME).
+export GIT_CEILING_DIRECTORIES="$TMP"
 
 # Fixture repo
 REPO="$TMP/sample-repo"
@@ -48,6 +94,7 @@ git -C "$REPO" config user.name "test"
 printf 'hello\n' >"$REPO/README.md"
 git -C "$REPO" add README.md
 git -C "$REPO" commit -qm "init"
+assert_true "fixture-outside-temp" "! under_temp_root \"$TMP\""
 
 # Case 1: worktree under repo/.cgo-worktrees
 set +e
@@ -62,7 +109,7 @@ assert_true "case1-under-repo" "[[ \"$(basename "$(dirname "$out1")")\" == \".cg
 repo_base="$(basename "$REPO")"
 assert_true "case1-repo-name" "[[ \"$out1\" == *\"/${repo_base}/.cgo-worktrees/\"* ]]"
 
-# Case 2: CGO_WORKTREE_ROOT under temp must fail when TMP is temp-ish
+# Case 2: CGO_WORKTREE_ROOT under a temp root must fail
 # Force /tmp root (product must refuse — sandbox temp rules)
 export CGO_WORKTREE_ROOT="/tmp/cgo-worktree-test-$$"
 set +e
